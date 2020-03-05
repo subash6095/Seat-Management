@@ -35,6 +35,7 @@ public class SeatAllocationServiceImpl implements SeatAllocationService {
         return companyDAO.getAvailableSeats(companyId, floorId);
     }
 
+    //User raising seat change request and gives new position details
     @Override
     public Response requestSeatChange(RequestDTO requestDTO) {
         User user = userDAO.getUser(requestDTO.getUserId());
@@ -57,6 +58,7 @@ public class SeatAllocationServiceImpl implements SeatAllocationService {
         return new Response(idGenerator.get(), request.getId(), request.getRequestStatus());
     }
 
+    //Get request came against approverUserId and seat change happens based on the data present in the request
     @Override
     public void processSeatChangeRequest(int approverUserId, RequestStatus requestStatus) {
         List<Request> requests = requestDAO.getRequestRaisedToAdmin(approverUserId);
@@ -70,14 +72,16 @@ public class SeatAllocationServiceImpl implements SeatAllocationService {
         });
     }
 
+    // admin changes User's seat position
     @Override
     public void doSeatChange(int userId, int companyId, int floorId, int seatId) {
         User user = userDAO.getUser(userId);
         if (!companyDAO.isSeatAvailable(companyId, floorId, seatId)) {
             throw new SeatAllocationException(ERROR_CODE.EC_006.getErrorMessage());
         }
-
+        // mark current position of User as Available becoz User is moving to new position
         companyDAO.updateSeatStatus(companyId, user.getPosition().getFloorId(), user.getPosition().getFloorId(), SeatStatus.AVAILABLE);
+        // mark new position of User as unavailable becoz User moved here
         companyDAO.updateSeatStatus(companyId, floorId, seatId, SeatStatus.UNAVAILABLE);
 
         userDAO.getUser(userId).setPosition(new UserPosition(floorId, seatId));
